@@ -19,11 +19,11 @@ Vagrant.configure("2") do |config|
       d.build_dir = "."
       d.name = "x"
       d.create_args = [
-        "--network", "x_net"
+        "--network", "vagrant_net_192_168_8_0"
       ]
       d.remains_running = true
     end
-    alma.vm.network "private_network", ip: "192.168.8.2", netmask: "24"
+    # alma.vm.network "private_network", ip: "192.168.8.2", netmask: "24"
   end
 
   config.vm.provision "docker" do |p|
