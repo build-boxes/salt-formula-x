@@ -3,11 +3,18 @@ RUN dnf -y install nano
 RUN curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.repo | tee /etc/yum.repos.d/salt.repo
 RUN dnf update -y 
 RUN dnf -y install salt-master salt-minion
-RUN dnf -y install ruby
+# Install RVM and Ruby 2.6+
+RUN curl -sSL https://get.rvm.io | bash -s stable
+RUN usermod -aG rvm root
+RUN /bin/bash -lc "source /etc/profile.d/rvm.sh && rvm requirements"
+RUN /bin/bash -lc "rvm install 2.6.10 && rvm use 2.6.10 --default"
+#
+# Install serverspec gem
+RUN /bin/bash -lc "gem install --no-document serverspec"
+#
 RUN dnf clean expire-cache
 RUN dnf clean all
 RUN systemctl enable salt-master
 RUN systemctl enable salt-minion
-RUN gem install --no-document serverspec
 ENTRYPOINT [ "/sbin/init" ]
 #CMD [ "/bin/bash", "-c", "/usr/bin/tail -f /dev/null" ]

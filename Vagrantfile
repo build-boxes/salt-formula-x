@@ -14,16 +14,19 @@
 #   x_net
 
 Vagrant.configure("2") do |config|
-  config.vm.provider "docker" do |d|
-    d.build_dir = "."
-    d.name = "monit"
-    d.create_args = [
-      "--network", "x_net"
-    ]
-    d.remains_running = true
+  config.vm.define "x" do |alma|
+    alma.vm.provider :docker do |d|
+      d.build_dir = "."
+      d.name = "x"
+      d.create_args = [
+        "--network", "x_net"
+      ]
+      d.remains_running = true
+    end
+    alma.vm.network "private_network", ip: "192.168.8.2", netmask: "24"
   end
 
   config.vm.provision "docker" do |p|
-    p.run "monit"
+    p.run "x"
   end
 end
