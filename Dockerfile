@@ -25,3 +25,39 @@ RUN systemctl enable salt-master
 RUN systemctl enable salt-minion
 ENTRYPOINT [ "/sbin/init" ]
 #CMD [ "/bin/bash", "-c", "/usr/bin/tail -f /dev/null" ]
+
+#--
+FROM quay.io/almalinuxorg/almalinux:8
+
+# Basic tools and SaltStack setup
+RUN dnf -y install nano curl gnupg2 gcc make patch bzip2 autoconf automake libtool bison \
+    readline-devel zlib-devel libffi-devel openssl-devel \
+    epel-release
+
+RUN curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.repo \
+    | tee /etc/yum.repos.d/salt.repo
+
+RUN dnf update -y
+RUN dnf -y install salt-master salt-minion
+
+# Install Ruby 2.6.10 from source
+WORKDIR /tmp
+RUN curl -O https://cache.ruby-lang.org/pub/ruby/2.6/ruby-2.6.10.tar.gz \
+    && tar -xzf ruby-2.6.10.tar.gz \
+    && cd ruby-2.6.10 \
+    && ./configure --disable-install-doc \
+    && make -j$(nproc) \
+    && make install \
+    && cd .. && rm -rf ruby-2.6.10 ruby-2.6.10.tar.gz
+
+# Install serverspec gem
+RUN gem install --no-document serverspec
+
+# Cleanup
+RUN dnf clean expire-cache && dnf clean all
+
+# Enable Salt services
+RUN systemctl enable salt-master
+RUN systemctl enable salt-minion
+
+ENTRYPOINT [ "/sbin/init" ]
