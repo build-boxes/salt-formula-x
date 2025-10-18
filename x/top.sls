@@ -1,0 +1,4 @@
+base:
+  '*':
+    - timezone
+    - ntp

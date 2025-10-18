@@ -19,8 +19,8 @@ podman run -d --name saltx01 --hostname saltx01 -e SSH_PUB_KEY="$(cat ~/.ssh/id_
 
 ## Launching the Container - with Volume and Port mapping
 ```
-podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt/formula -it localhost/saltx
-podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt/formula -p 8080:80 -p 2232:22 -it localhost/saltx
+podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt -it localhost/saltx
+podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt -p 8080:80 -p 2232:22 -it localhost/saltx
 ```
 
 ## Connect to Running Container - via Podman Exec
@@ -59,4 +59,12 @@ podman image rm <Image-ID01> [<Image-ID02>/<ImageName-02> ...}
 You should have an account with DockerHub.io or Quay.io to push built images.
 ```
 podman push ....
+```
+
+## How To Run Serverspec Tests Manually
+You should login to the Container (either via SSH or podman exec).
+```
+cd /srv/salt/formula
+rspec timezone/test/timezone_spec.rb
+rspec ntp/test/ntp_spec.rb
 ```
