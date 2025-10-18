@@ -3,63 +3,6 @@ FROM quay.io/almalinuxorg/8-minimal
 LABEL maintainer="rauf.hammad@gmail.com"
 LABEL description="Reusable Salt master base image with Ruby 3.2, serverspec, and custom /srv/salt layout"
 
-# Basic tools and SaltStack setup
-RUN microdnf -y install procps net-tools curl nano httpd openssh-server
-RUN microdnf -y install gcc make patch bzip2 autoconf automake libtool bison \
-    readline-devel zlib-devel libffi-devel openssl-devel tar
-
-RUN curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.repo \
-    | tee /etc/yum.repos.d/salt.repo
-
-RUN microdnf update -y
-RUN microdnf -y install salt-master salt-minion
-
-# Install libyaml from source
-WORKDIR /tmp
-RUN curl -O https://pyyaml.org/download/libyaml/yaml-0.2.5.tar.gz \
-    && tar -xzf yaml-0.2.5.tar.gz \
-    && cd yaml-0.2.5 \
-    && ./configure \
-    && make -j$(nproc) \
-    && make install \
-    && cd .. && rm -rf yaml-0.2.5 yaml-0.2.5.tar.gz
-
-# Install Ruby 3.2.2 from source
-WORKDIR /tmp
-RUN curl -O https://cache.ruby-lang.org/pub/ruby/3.2/ruby-3.2.2.tar.gz \
-    && tar -xzf ruby-3.2.2.tar.gz \
-    && cd ruby-3.2.2 \
-    && ./configure --disable-install-doc \
-    && make -j$(nproc) \
-    && make install \
-    && cd .. && rm -rf ruby-3.2.2 ruby-3.2.2.tar.gz
-
-# Install serverspec gem
-RUN gem install --no-document serverspec
-
-# Cleanup
-RUN microdnf clean all
-WORKDIR /root
-
-RUN mkdir -p /srv/salt/x
-
-# Enable services
-RUN systemctl enable httpd
-RUN systemctl enable sshd
-RUN systemctl enable salt-master
-RUN systemctl enable salt-minion
-
-VOLUME [ "/srv/salt/x" ]
-EXPOSE 22 80
-ENTRYPOINT [ "/sbin/init" ]
-
-#-------
-
-FROM quay.io/almalinuxorg/8-minimal
-
-LABEL maintainer="rauf.hammad@gmail.com"
-LABEL description="Reusable Salt master base image with Ruby 3.2, serverspec, and custom /srv/salt layout"
-
 # Install core tools and SaltStack
 RUN microdnf -y install procps net-tools curl nano httpd openssh-server \
     && microdnf -y install gcc make patch bzip2 autoconf automake libtool bison \
