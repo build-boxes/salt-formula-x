@@ -1,63 +1,130 @@
-FROM quay.io/almalinuxorg/almalinux:8
-RUN dnf -y install nano
-RUN curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.repo | tee /etc/yum.repos.d/salt.repo
-RUN dnf update -y 
-RUN dnf -y install salt-master salt-minion
-#
-RUN dnf install -y epel-release
-RUN dnf install -y gnupg2 dirmngr curl
-RUN gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys \
-  409B6B1796C275462A1703113804BB82D39DC0E3 \
-  7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-#
-# Install RVM and Ruby 2.6+
-RUN curl -sSL https://get.rvm.io | bash -s stable
-RUN usermod -aG rvm root
-RUN /bin/bash -lc "source /etc/profile.d/rvm.sh && rvm requirements"
-RUN /bin/bash -lc "rvm install 2.6.10 && rvm use 2.6.10 --default"
-#
-# Install serverspec gem
-RUN /bin/bash -lc "gem install --no-document serverspec"
-#
-RUN dnf clean expire-cache
-RUN dnf clean all
-RUN systemctl enable salt-master
-RUN systemctl enable salt-minion
-ENTRYPOINT [ "/sbin/init" ]
-#CMD [ "/bin/bash", "-c", "/usr/bin/tail -f /dev/null" ]
+FROM quay.io/almalinuxorg/8-minimal
 
-#--
-FROM quay.io/almalinuxorg/almalinux:8
+LABEL maintainer="rauf.hammad@gmail.com"
+LABEL description="Reusable Salt master base image with Ruby 3.2, serverspec, and custom /srv/salt layout"
 
 # Basic tools and SaltStack setup
-RUN dnf -y install nano curl gnupg2 gcc make patch bzip2 autoconf automake libtool bison \
-    readline-devel zlib-devel libffi-devel openssl-devel \
-    epel-release
+RUN microdnf -y install procps net-tools curl nano httpd openssh-server
+RUN microdnf -y install gcc make patch bzip2 autoconf automake libtool bison \
+    readline-devel zlib-devel libffi-devel openssl-devel tar
 
 RUN curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.repo \
     | tee /etc/yum.repos.d/salt.repo
 
-RUN dnf update -y
-RUN dnf -y install salt-master salt-minion
+RUN microdnf update -y
+RUN microdnf -y install salt-master salt-minion
 
-# Install Ruby 2.6.10 from source
+# Install libyaml from source
 WORKDIR /tmp
-RUN curl -O https://cache.ruby-lang.org/pub/ruby/2.6/ruby-2.6.10.tar.gz \
-    && tar -xzf ruby-2.6.10.tar.gz \
-    && cd ruby-2.6.10 \
+RUN curl -O https://pyyaml.org/download/libyaml/yaml-0.2.5.tar.gz \
+    && tar -xzf yaml-0.2.5.tar.gz \
+    && cd yaml-0.2.5 \
+    && ./configure \
+    && make -j$(nproc) \
+    && make install \
+    && cd .. && rm -rf yaml-0.2.5 yaml-0.2.5.tar.gz
+
+# Install Ruby 3.2.2 from source
+WORKDIR /tmp
+RUN curl -O https://cache.ruby-lang.org/pub/ruby/3.2/ruby-3.2.2.tar.gz \
+    && tar -xzf ruby-3.2.2.tar.gz \
+    && cd ruby-3.2.2 \
     && ./configure --disable-install-doc \
     && make -j$(nproc) \
     && make install \
-    && cd .. && rm -rf ruby-2.6.10 ruby-2.6.10.tar.gz
+    && cd .. && rm -rf ruby-3.2.2 ruby-3.2.2.tar.gz
 
 # Install serverspec gem
 RUN gem install --no-document serverspec
 
 # Cleanup
-RUN dnf clean expire-cache && dnf clean all
+RUN microdnf clean all
+WORKDIR /root
 
-# Enable Salt services
+RUN mkdir -p /srv/salt/x
+
+# Enable services
+RUN systemctl enable httpd
+RUN systemctl enable sshd
 RUN systemctl enable salt-master
 RUN systemctl enable salt-minion
+
+VOLUME [ "/srv/salt/x" ]
+EXPOSE 22 80
+ENTRYPOINT [ "/sbin/init" ]
+
+#-------
+
+FROM quay.io/almalinuxorg/8-minimal
+
+LABEL maintainer="rauf.hammad@gmail.com"
+LABEL description="Reusable Salt master base image with Ruby 3.2, serverspec, and custom /srv/salt layout"
+
+# Install core tools and SaltStack
+RUN microdnf -y install procps net-tools curl nano httpd openssh-server \
+    && microdnf -y install gcc make patch bzip2 autoconf automake libtool bison \
+       readline-devel zlib-devel libffi-devel openssl-devel tar \
+    && curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.repo \
+       | tee /etc/yum.repos.d/salt.repo \
+    && microdnf update -y \
+    && microdnf -y install salt-master salt-minion
+
+# Build and install libyaml from source
+WORKDIR /tmp
+RUN curl -O https://pyyaml.org/download/libyaml/yaml-0.2.5.tar.gz \
+    && tar -xzf yaml-0.2.5.tar.gz \
+    && cd yaml-0.2.5 \
+    && ./configure && make -j$(nproc) && make install \
+    && cd .. && rm -rf yaml-0.2.5*
+
+# Build and install Ruby 3.2.2 from source
+RUN curl -O https://cache.ruby-lang.org/pub/ruby/3.2/ruby-3.2.2.tar.gz \
+    && tar -xzf ruby-3.2.2.tar.gz \
+    && cd ruby-3.2.2 \
+    && export CPPFLAGS="-I/usr/local/include" \
+    && export LDFLAGS="-L/usr/local/lib" \
+    && ./configure --disable-install-doc \
+    && make -j$(nproc) && make install \
+    && cd .. && rm -rf ruby-3.2.2*
+
+# Install serverspec gem
+RUN gem install --no-document serverspec
+
+# Configure Salt master to use /srv/salt layout
+RUN mkdir -p /srv/salt /srv/salt/pillar /srv/salt/formula \
+    && echo "file_roots:\n  base:\n    - /srv/salt\n    - /srv/salt/formula\n\npillar_roots:\n  base:\n    - /srv/salt/pillar" \
+       > /etc/salt/master.d/custom_roots.conf
+
+# Clean up
+RUN microdnf clean all
+WORKDIR /root
+
+# Enable services
+RUN systemctl enable httpd \
+    && systemctl enable sshd \
+    && systemctl enable salt-master \
+    && systemctl enable salt-minion
+
+# Allow SSH key login for root
+RUN mkdir -p /root/.ssh \
+    && chmod 700 /root/.ssh \
+    && touch /root/.ssh/authorized_keys \
+    && chmod 600 /root/.ssh/authorized_keys \
+    && sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^#\?PubkeyAuthentication .*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+
+RUN [ -n "$SSH_PUB_KEY" ] && echo "$SSH_PUB_KEY" >> /root/.ssh/authorized_keys || echo "No SSH key provided"
+
+# Set root password
+RUN echo "root:podman!" | chpasswd
+
+# Enable SSH password login
+RUN sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Expose ports and volume
+VOLUME [ "/srv/salt" ]
+EXPOSE 22 80
 
 ENTRYPOINT [ "/sbin/init" ]
