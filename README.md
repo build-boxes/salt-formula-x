@@ -62,9 +62,39 @@ podman push ....
 ```
 
 ## How To Run Serverspec Tests Manually
-You should login to the Container (either via SSH or podman exec).
-```
-cd /srv/salt/formula
-rspec timezone/test/timezone_spec.rb
-rspec ntp/test/ntp_spec.rb
-```
+1. Place your formula Tests inside the "test" folder:
+    ```
+    x
+    ├── formula
+    │   ├── ntp
+    │   │   ├── init.sls
+    │   │   └── test
+    │   │       └── ntp_spec.rb
+    │   └── timezone
+    │       ├── init.sls
+    │       └── test
+    │           └── timezone_spec.rb
+    ├── pillar
+    │   ├── ntp.sls
+    │   ├── timezone.sls
+    │   └── top.sls
+    └── top.sls
+    ```
+1. All serverspec files should:
+    - named like "*_spec.rb"
+    - contain a first line of:
+        ```
+        require '/opt/serverspec/spec_helper'
+        ```
+1. You should login to the Container (either via SSH or podman exec).
+    ```
+    cd /srv/salt/formula
+    rspec timezone/test/timezone_spec.rb
+    rspec ntp/test/ntp_spec.rb
+    ```
+1. To run all tests, run the following from any folder:
+    ```
+    $ /opt/serverspec/run_all_tests.sh
+    OR
+    $ run_all_tests.sh
+    ```
