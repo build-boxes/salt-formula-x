@@ -3,24 +3,29 @@ A template for salt formula, with serverspec testing in local Vagrant managed do
 
 ## Build Podman Image
 ```
-podman build . -t saltx
+podman build . -t hammadrauf/saltx
 ```
 
-## Launching the Container
+## Launching the Container (Locally)
 ```
-podman run -d --systemd=true  --name saltx01 --hostname saltx01 -it localhost/saltx
-podman run -d --name saltx01 --hostname saltx01 -it localhost/saltx
+podman run -d --systemd=true  --name saltx01 --hostname saltx01 -it hammadrauf/saltx
+podman run -d --name saltx01 --hostname saltx01 -it hammadrauf/saltx
+```
+
+## Launching the Container (From Quay.io)
+```
+podman run -d --name saltx01 --hostname saltx01 -it quay.io/hammadrauf/saltx
 ```
 
 ## Launching the Container - with SSH Key
 ```
-podman run -d --name saltx01 --hostname saltx01 -e SSH_PUB_KEY="$(cat ~/.ssh/id_rsa_salt.pub)" -it localhost/saltx
+podman run -d --name saltx01 --hostname saltx01 -e SSH_PUB_KEY="$(cat ~/.ssh/id_rsa_salt.pub)" -it quay.io/hammadrauf/saltx
 ```
 
 ## Launching the Container - with Volume and Port mapping
 ```
-podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt -it localhost/saltx
-podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt -p 8080:80 -p 2232:22 -it localhost/saltx
+podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt -it quay.io/hammadrauf/saltx
+podman run -d --name saltx01 --hostname saltx01 -v $(pwd)/x:/srv/salt -p 8080:80 -p 2232:22 -it quay.io/hammadrauf/saltx
 ```
 
 ## Connect to Running Container - via Podman Exec
