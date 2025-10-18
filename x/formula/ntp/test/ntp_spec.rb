@@ -1,4 +1,4 @@
-require 'spec_helper'
+require '/opt/serverspec/spec_helper'
 
 describe 'NTP configuration' do
   if os[:family] == 'redhat'

@@ -1,4 +1,4 @@
-require 'spec_helper'
+require '/opt/serverspec/spec_helper'
 
 describe 'Timezone configuration' do
   describe file('/etc/localtime') do

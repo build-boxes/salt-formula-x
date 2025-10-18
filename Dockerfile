@@ -38,6 +38,19 @@ RUN mkdir -p /srv/salt /srv/salt/pillar /srv/salt/formula \
     && echo "file_roots:\n  base:\n    - /srv/salt\n    - /srv/salt/formula\n\npillar_roots:\n  base:\n    - /srv/salt/pillar" \
        > /etc/salt/master.d/custom_roots.conf
 
+# Pre-initialize serverspec configuration
+RUN mkdir -p /opt/serverspec/init \
+    && cd /opt/serverspec/init \
+    && echo -e "2\nlocalhost" | serverspec-init \
+    && mv spec/spec_helper.rb /opt/serverspec/spec_helper.rb \
+    && rm -rf /opt/serverspec/init
+# Copy wrapper script into persistent location
+COPY run_all_tests.sh /opt/serverspec/run_all_tests.sh
+# Make it executable
+RUN chmod +x /opt/serverspec/run_all_tests.sh
+# Add /opt/serverspec to root's PATH
+RUN echo 'export PATH=$PATH:/opt/serverspec' >> /root/.bashrc
+
 # Clean up
 RUN microdnf clean all
 WORKDIR /root
@@ -71,3 +84,4 @@ VOLUME [ "/srv/salt" ]
 EXPOSE 22 80
 
 ENTRYPOINT [ "/sbin/init" ]
+#CMD ["/opt/serverspec/run_all_tests.sh"]
