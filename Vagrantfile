@@ -15,18 +15,18 @@
 
 Vagrant.configure("2") do |config|
   config.vm.define "x" do |alma|
-    alma.vm.provider :docker do |d|
+    alma.vm.provider "podman" do |d|
       d.build_dir = "."
       d.name = "x"
-      d.create_args = [
-        "--network", "vagrant_net_192_168_8_0"
-      ]
+      # d.create_args = [
+      #   "--network", "vagrant_net_192_168_8_0"
+      # ]
       d.remains_running = true
     end
     # alma.vm.network "private_network", ip: "192.168.8.2", netmask: "24"
   end
 
-  config.vm.provision "docker" do |p|
+  config.vm.provision "podman" do |p|
     p.run "x"
   end
 end
