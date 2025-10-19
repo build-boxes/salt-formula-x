@@ -70,9 +70,15 @@ RUN systemctl enable httpd \
     && systemctl enable salt-master \
     && systemctl enable salt-minion
 
+# Configure Salt-Minion OS(Almalinux-minimal) Specific Providers
+RUN printf '%s\n' \
+        'providers:' \
+        '  pkg: microdnf' \
+        '  service: systemd' \
+        >> /etc/salt/minion
 # Configure Salt minion to point to local master
 RUN echo "master: localhost" > /etc/salt/minion.d/master.conf \
-    && echo "id: local-master" > /etc/salt/minion_id
+    && echo "local-master" > /etc/salt/minion_id
 # Accept Minion Keys automatically    
 RUN echo "auto_accept: True" > /etc/salt/master.d/auto_accept.conf
 # Copy bootstrap script into persistent location
