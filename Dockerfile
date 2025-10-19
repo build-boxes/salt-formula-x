@@ -6,7 +6,7 @@ LABEL description="Reusable Salt master base image with Ruby 3.2, serverspec, an
 # Install core tools and SaltStack
 RUN microdnf -y install procps net-tools curl nano httpd openssh-server \
     && microdnf -y install gcc make patch bzip2 autoconf automake libtool bison \
-       readline-devel zlib-devel libffi-devel openssl-devel tar \
+       readline-devel zlib-devel libffi-devel openssl-devel tar dnf \
     && curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.repo \
        | tee /etc/yum.repos.d/salt.repo \
     && microdnf update -y \
@@ -73,7 +73,7 @@ RUN systemctl enable httpd \
 # Configure Salt-Minion OS(Almalinux-minimal) Specific Providers
 RUN printf '%s\n' \
         'providers:' \
-        '  pkg: microdnf' \
+        '  pkg: dnf' \
         '  service: systemd' \
         >> /etc/salt/minion
 # Configure Salt minion to point to local master

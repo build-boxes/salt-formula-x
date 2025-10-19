@@ -9,4 +9,4 @@ timezone_symlink:
 timezone_cmd:
   cmd.run:
     - name: timedatectl set-timezone {{ tz }}
-    - unless: timedatectl | grep "Time zone: {{ tz }}"
+    - unless: "timedatectl | grep 'Time zone: {{ tz }}'"
