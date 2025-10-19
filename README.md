@@ -66,6 +66,23 @@ You should have an account with DockerHub.io or Quay.io to push built images.
 podman push ....
 ```
 
+## Pairing the Minion with Local Salt Master
+
+To configure the container to act as both a Salt master and its own minion, the image sets up the minion to point to `localhost` and assigns it a static ID (`local-master`). This is done automatically during build of the Dockerfile, and requires no action on part of the user of the Container.  
+The Salt master is configured to auto-accept minion keys.  
+Once inside the container shell, you can manually trigger the pairing and apply the highstate using the bootstrap script:  
+```
+$ /opt/salt/bootstrap_minion.sh
+OR
+$ bootstrap_minion.sh
+```
+This script starts both services Master and Minion, waits briefly, and runs the following:
+```
+salt-call test.ping
+salt-call state.apply
+```
+This confirms the minion is connected and applies the configured states from /srv/salt. The container is now fully self-contained for Salt testing and orchestration.
+
 ## How To Run Serverspec Tests Manually
 1. Place your formula Tests inside the "test" folder:
     ```

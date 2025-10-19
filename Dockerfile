@@ -35,8 +35,17 @@ RUN gem install --no-document serverspec
 
 # Configure Salt master to use /srv/salt layout
 RUN mkdir -p /srv/salt /srv/salt/pillar /srv/salt/formula \
-    && echo "file_roots:\n  base:\n    - /srv/salt\n    - /srv/salt/formula\n\npillar_roots:\n  base:\n    - /srv/salt/pillar" \
-       > /etc/salt/master.d/custom_roots.conf
+    && printf '%s\n' \
+        'file_roots:' \
+        '  base:' \
+        '    - /srv/salt' \
+        '    - /srv/salt/formula' \
+        '' \
+        'pillar_roots:' \
+        '  base:' \
+        '    - /srv/salt/pillar' \
+        > /etc/salt/master.d/custom_roots.conf
+
 
 # Pre-initialize serverspec configuration
 RUN mkdir -p /opt/serverspec/init \
@@ -60,6 +69,16 @@ RUN systemctl enable httpd \
     && systemctl enable sshd \
     && systemctl enable salt-master \
     && systemctl enable salt-minion
+
+# Configure Salt minion to point to local master
+RUN echo "master: localhost" > /etc/salt/minion.d/master.conf \
+    && echo "id: local-master" > /etc/salt/minion_id
+# Accept Minion Keys automatically    
+RUN echo "auto_accept: True" > /etc/salt/master.d/auto_accept.conf
+# Copy bootstrap script into persistent location
+COPY bootstrap_minion.sh /opt/salt/bootstrap_minion.sh
+RUN chmod +x /opt/salt/bootstrap_minion.sh
+RUN echo 'export PATH=$PATH:/opt/salt' >> /root/.bashrc
 
 # Allow SSH key login for root
 RUN mkdir -p /root/.ssh \
