@@ -4,12 +4,20 @@ A template for salt formula, with serverspec testing in local Vagrant managed do
 ## Build Podman Image
 ```
 podman build . -t hammadrauf/saltx
+
+OR
+
+docker build . -t hammadrauf/saltx
 ```
 
 ## Launching the Container (Locally)
 ```
 podman run -d --systemd=true  --name saltx01 --hostname saltx01 -it hammadrauf/saltx
 podman run -d --name saltx01 --hostname saltx01 -it hammadrauf/saltx
+
+OR
+
+docker run -d --privileged  --name saltx01 --hostname saltx01 -it hammadrauf/saltx
 ```
 
 ## Launching the Container (From Quay.io)
@@ -51,6 +59,13 @@ podman container stop saltx01
 podman rm saltx01
 OR
 podman container rm saltx01
+podman image rm hammadrauf/saltx
+
+OR
+
+docker kill saltx01
+docker rm saltx01
+docker image rm hammadrauf/saltx
 ```
 
 ## List and Delete Unwanted Images
