@@ -1,5 +1,5 @@
 # ------ COMPILER - STAGE ------------
-FROM quay.io/almalinuxorg/8-minimal AS compiler
+FROM quay.io/almalinuxorg/10-minimal AS compiler
 
 # Install core tools and SaltStack
 RUN echo " Update OS repos"  && \
@@ -24,15 +24,15 @@ RUN curl -O https://pyyaml.org/download/libyaml/yaml-0.2.5.tar.gz \
     && ./configure --prefix=/opt/libyaml && make -j$(nproc) && make install \
     && cd .. && rm -rf yaml-0.2.5*
 
-# Build and install Ruby 3.2.2 from source
-RUN curl -O https://cache.ruby-lang.org/pub/ruby/3.2/ruby-3.2.2.tar.gz \
-    && tar -xzf ruby-3.2.2.tar.gz \
-    && cd ruby-3.2.2 \
+# Build and install Ruby 4.0 from source
+RUN curl -O https://cache.ruby-lang.org/pub/ruby/4.0/ruby-4.0.7.tar.gz \
+    && tar -xzf ruby-4.0.7.tar.gz \
+    && cd ruby-4.0.7 \
     && export CPPFLAGS="-I/opt/libyaml/include" \
     && export LDFLAGS="-L/opt/libyaml/lib" \
     && ./configure --prefix=/opt/ruby --disable-install-doc \
     && make -j$(nproc) && make install \
-    && cd .. && rm -rf ruby-3.2.2*
+    && cd .. && rm -rf ruby-4.0.7*
 
 # Install serverspec gem
 RUN PATH="/opt/ruby/bin:$PATH" gem install --no-document serverspec
@@ -45,10 +45,10 @@ RUN mkdir -p /opt/serverspec/init \
     && rm -rf /opt/serverspec/init
 
 # ------ Runtime - Stage ----
-FROM quay.io/almalinuxorg/8-minimal
+FROM quay.io/almalinuxorg/10-minimal
 
 LABEL maintainer="rauf.hammad@gmail.com"
-LABEL description="Reusable Salt master base image with Ruby 3.2, serverspec, and custom /srv/salt layout"
+LABEL description="Reusable Salt master base image with Ruby 4.0.7, serverspec, and custom /srv/salt layout"
 
 # Update OS Image
 RUN echo " Update OS repos"  && \
